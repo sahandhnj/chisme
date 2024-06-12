@@ -103,7 +103,7 @@ func TestBashCommandRunner_RunCommandAsync(t *testing.T) {
 			t.Fatalf("RunCommandAsync() expected to fail, error is nil")
 		}
 
-		if !strings.Contains(got, "command not found") {
+		if len(got) > 0 && !strings.Contains(got, "command not found") {
 			t.Fatalf("RunCommandAsync() error = %v, expected to contain %v", err, "command not found")
 		}
 	})

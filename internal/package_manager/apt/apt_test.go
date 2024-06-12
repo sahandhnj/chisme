@@ -3,7 +3,7 @@ package apt
 import (
 	"errors"
 	"sahand.dev/chisme/internal/command_runner"
-	"sahand.dev/chisme/internal/package_manager/models"
+	"sahand.dev/chisme/internal/persistence/models"
 	"strings"
 	"testing"
 )
@@ -26,9 +26,9 @@ libc6-dev/now 2.27-3ubuntu1.2 amd64 [installed]
 	}
 
 	expected := []*models.Package{
-		{Name: "libc6", CurrVersion: "2.27-3ubuntu1.2", Version: "2.27-3ubuntu1.2", Installed: true},
-		{Name: "libc6-dev", CurrVersion: "2.27-3ubuntu1.2", Version: "2.27-3ubuntu1.2", Installed: true},
-		{Name: "0ad-data-common", CurrVersion: "", Version: "0.0.26-1", Installed: false},
+		{Name: "libc6", InstalledVersion: "2.27-3ubuntu1.2", Version: "2.27-3ubuntu1.2", Installed: true},
+		{Name: "libc6-dev", InstalledVersion: "2.27-3ubuntu1.2", Version: "2.27-3ubuntu1.2", Installed: true},
+		{Name: "0ad-data-common", InstalledVersion: "", Version: "0.0.26-1", Installed: false},
 	}
 
 	for i, _ := range packages {
@@ -55,8 +55,8 @@ libc6-dev/now 2.27-3ubuntu1.2 amd64 [upgradable from: 2.27-3ubuntu1.1]
 	}
 
 	expected := []*models.Package{
-		{Name: "libc6", CurrVersion: "2.27-3ubuntu1.1", Version: "2.27-3ubuntu1.2", Installed: true},
-		{Name: "libc6-dev", CurrVersion: "2.27-3ubuntu1.1", Version: "2.27-3ubuntu1.2", Installed: true},
+		{Name: "libc6", InstalledVersion: "2.27-3ubuntu1.1", Version: "2.27-3ubuntu1.2", Installed: true},
+		{Name: "libc6-dev", InstalledVersion: "2.27-3ubuntu1.1", Version: "2.27-3ubuntu1.2", Installed: true},
 	}
 
 	for i, _ := range packages {
@@ -109,8 +109,8 @@ func TestPackageVersionMismatch(t *testing.T) {
 	}
 	if len(packages) > 0 {
 		for _, pkg := range packages {
-			if pkg.CurrVersion == pkg.Version {
-				t.Fatalf("Package %s has the same current and new version: %s", pkg.Name, pkg.CurrVersion)
+			if pkg.InstalledVersion == pkg.Version {
+				t.Fatalf("Package %s has the same current and new version: %s", pkg.Name, pkg.InstalledVersion)
 			}
 		}
 	}

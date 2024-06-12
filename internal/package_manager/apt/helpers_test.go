@@ -3,7 +3,7 @@ package apt
 import (
 	"bufio"
 	"fmt"
-	"sahand.dev/chisme/internal/package_manager/models"
+	"sahand.dev/chisme/internal/persistence/models"
 	"slices"
 	"strings"
 	"testing"
@@ -79,10 +79,10 @@ func TestParseLineToUpgradablePackage(t *testing.T) {
 			name: "valid line",
 			line: "pkg-name/focal-updates 2:8.1.2269-1ubuntu5.23 amd64 [upgradable from: 2:8.1.2269-1ubuntu5.22]",
 			expected: &models.Package{
-				Name:        "pkg-name",
-				CurrVersion: "2:8.1.2269-1ubuntu5.22",
-				Version:     "2:8.1.2269-1ubuntu5.23",
-				Installed:   true,
+				Name:             "pkg-name",
+				InstalledVersion: "2:8.1.2269-1ubuntu5.22",
+				Version:          "2:8.1.2269-1ubuntu5.23",
+				Installed:        true,
 			},
 			err: false,
 		},
@@ -120,10 +120,10 @@ func TestParseLineToPackage(t *testing.T) {
 			name: "upgradable package_manager",
 			line: "libc6/now 2.27-3ubuntu1.2 amd64 [upgradable from: 2.27-3ubuntu1.1]",
 			expected: &models.Package{
-				Name:        "libc6",
-				CurrVersion: "2.27-3ubuntu1.1",
-				Version:     "2.27-3ubuntu1.2",
-				Installed:   true,
+				Name:             "libc6",
+				InstalledVersion: "2.27-3ubuntu1.1",
+				Version:          "2.27-3ubuntu1.2",
+				Installed:        true,
 			},
 			err: nil,
 		},
@@ -131,10 +131,10 @@ func TestParseLineToPackage(t *testing.T) {
 			name: "installed package_manager",
 			line: "yudit-common/noble,noble,now 3.1.0-1 all [installed,automatic]",
 			expected: &models.Package{
-				Name:        "yudit-common",
-				CurrVersion: "3.1.0-1",
-				Version:     "3.1.0-1",
-				Installed:   true,
+				Name:             "yudit-common",
+				InstalledVersion: "3.1.0-1",
+				Version:          "3.1.0-1",
+				Installed:        true,
 			},
 			err: nil,
 		},
@@ -142,10 +142,10 @@ func TestParseLineToPackage(t *testing.T) {
 			name: "installed package_manager with same version",
 			line: "yaru-theme-gtk/noble,noble,now 24.04.2-0ubuntu1 all [installed]",
 			expected: &models.Package{
-				Name:        "yaru-theme-gtk",
-				CurrVersion: "24.04.2-0ubuntu1",
-				Version:     "24.04.2-0ubuntu1",
-				Installed:   true,
+				Name:             "yaru-theme-gtk",
+				InstalledVersion: "24.04.2-0ubuntu1",
+				Version:          "24.04.2-0ubuntu1",
+				Installed:        true,
 			},
 			err: nil,
 		},
@@ -286,7 +286,7 @@ func TestExtractCurrentVersion(t *testing.T) {
 			err:      false,
 		},
 		{
-			name:     "missing current version",
+			name:     "missing installed version",
 			fields:   []string{"package_manager-name", "1.0.0"},
 			expected: "1.0.0",
 			err:      false,
@@ -301,13 +301,13 @@ func TestExtractCurrentVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := extractCurrentVersion(tt.fields)
+			result, err := extractInstalledVersion(tt.fields)
 			if (err != nil) != tt.err {
-				t.Errorf("extractCurrentVersion() error = %v, want %v", err, tt.err)
+				t.Errorf("extractInstalledVersion() error = %v, want %v", err, tt.err)
 				return
 			}
 			if result != tt.expected {
-				t.Errorf("extractCurrentVersion() = %v, want %v", result, tt.expected)
+				t.Errorf("extractInstalledVersion() = %v, want %v", result, tt.expected)
 			}
 		})
 	}

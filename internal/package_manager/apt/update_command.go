@@ -3,7 +3,7 @@ package apt
 import (
 	"fmt"
 	"log"
-	"sahand.dev/chisme/internal/package_manager/models"
+	"sahand.dev/chisme/internal/persistence/models"
 )
 
 func (a *Apt) UpdatePackageSimulation(pkg *models.Package) (<-chan string, error) {

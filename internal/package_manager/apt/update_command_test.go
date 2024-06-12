@@ -2,7 +2,7 @@ package apt
 
 import (
 	"sahand.dev/chisme/internal/command_runner"
-	"sahand.dev/chisme/internal/package_manager/models"
+	"sahand.dev/chisme/internal/persistence/models"
 	"strings"
 	"testing"
 )

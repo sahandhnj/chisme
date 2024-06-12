@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"sahand.dev/chisme/internal/package_manager/models"
+	"sahand.dev/chisme/internal/persistence/models"
 	"strings"
 )
 
@@ -55,20 +55,20 @@ func parseLineToPackage(line string) (*models.Package, error) {
 		return nil, err
 	}
 
-	currVersion := ""
+	installedVersion := ""
 	installed := isInstalled(line)
 	if installed {
-		currVersion, err = extractCurrentVersion(fields)
+		installedVersion, err = extractInstalledVersion(fields)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	return &models.Package{
-		Name:        packageName,
-		Version:     version,
-		CurrVersion: currVersion,
-		Installed:   installed,
+		Name:             packageName,
+		Version:          version,
+		InstalledVersion: installedVersion,
+		Installed:        installed,
 	}, nil
 }
 
@@ -107,17 +107,17 @@ func extractVersion(fields []string) (string, error) {
 	return "", fmt.Errorf("version field is missing")
 }
 
-// extractCurrentVersion extracts the current version from the fields of the line
-func extractCurrentVersion(fields []string) (string, error) {
+// extractInstalledVersion extracts the installed version from the fields of the line
+func extractInstalledVersion(fields []string) (string, error) {
 	if len(fields) == 6 {
 		parts := strings.Split(fields[5], "]")
 		if len(parts) < 1 {
-			return "", fmt.Errorf("failed to extract current version from field: %s", fields[5])
+			return "", fmt.Errorf("failed to extract installed version from field: %s", fields[5])
 		}
 		return parts[0], nil
 	}
 
-	// For installed packages, the current version is the new version
+	// For installed packages, the installed version is the new version
 	if len(fields) >= 2 {
 		return strings.TrimSpace(strings.TrimLeft(fields[1], " ")), nil
 	}

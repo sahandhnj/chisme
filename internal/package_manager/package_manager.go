@@ -1,6 +1,8 @@
 package package_manager
 
-import "sahand.dev/chisme/internal/package_manager/models"
+import (
+	"sahand.dev/chisme/internal/persistence/models"
+)
 
 // PackageManger is representing the abstraction of a package_manager manager
 type PackageManger interface {

@@ -3,7 +3,7 @@ package apt
 import (
 	"fmt"
 	"sahand.dev/chisme/internal/command_runner"
-	"sahand.dev/chisme/internal/package_manager/models"
+	"sahand.dev/chisme/internal/persistence/models"
 )
 
 // Apt is a struct that represents the apt package_manager manager
@@ -46,33 +46,3 @@ func (a *Apt) GetUpgradablePackages() ([]*models.Package, error) {
 
 	return packages, nil
 }
-
-//
-//// UpdatePackages updates the given packages
-//func (a *Apt) UpdatePackages(packages []*models.Package) err {
-//	for _, pkg := range packages {
-//		command := fmt.Sprintf("%s-get install --only-upgrade -y %s", a.CLI, pkg.Name)
-//		if _, err := a.CommandRunner.RunCommand(command); err != nil {
-//			return fmt.Errorf("failed to update package_manager %s: %w", pkg.Name, err)
-//		}
-//	}
-//	return nil
-//}
-//
-//// RemovePackage removes the given package_manager
-//func (a *Apt) RemovePackage(pkg *models.Package) err {
-//	command := fmt.Sprintf("%s-get remove -y %s", a.CLI, pkg.Name)
-//	if _, err := a.CommandRunner.RunCommand(command); err != nil {
-//		return fmt.Errorf("failed to remove package_manager %s: %w", pkg.Name, err)
-//	}
-//	return nil
-//}
-//
-//// InstallPackage installs the given package_manager
-//func (a *Apt) InstallPackage(pkg *models.Package) err {
-//	command := fmt.Sprintf("%s-get install -y %s", a.CLI, pkg.Name)
-//	if _, err := a.CommandRunner.RunCommand(command); err != nil {
-//		return fmt.Errorf("failed to install package_manager %s: %w", pkg.Name, err)
-//	}
-//	return nil
-//}

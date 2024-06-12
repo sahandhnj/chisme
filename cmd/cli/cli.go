@@ -1,16 +1,35 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
+	"log"
 	"os"
 	"sahand.dev/chisme/internal/command_runner"
 	"sahand.dev/chisme/internal/package_manager"
 	"sahand.dev/chisme/internal/package_manager/apt"
-	"sahand.dev/chisme/internal/package_manager/models"
+	"sahand.dev/chisme/internal/persistence"
+	"sahand.dev/chisme/internal/persistence/sqllite_store"
+	"time"
 )
 
 func main() {
+	db, err := sql.Open("sqlite3", "./chisme.db")
+	if err != nil {
+		log.Fatalf("failed to open database: %v", err)
+	}
+	defer db.Close()
+
+	// Initialize the database schema
+	if err = sqllite_store.SetupDatabase(db); err != nil {
+		log.Fatalf("failed to setup database: %v", err)
+	}
+
+	var packageStore persistence.PackageStore
+	packageStore = sqllite_store.NewSQLitePackageStore(db)
+
 	// Define command-line arguments
 	packageManager := flag.String("package_manager", "apt", "The package_manager manager to use (e.g., apt, yum)")
 	command := flag.String("command", "list_upgradable", "The command to run (e.g., list_upgradable, update, remove, install)")
@@ -39,7 +58,11 @@ func main() {
 			os.Exit(1)
 		}
 		for _, pkg := range packages {
-			fmt.Printf("Package: %s, Current Version: %s, New Version: %s\n", pkg.Name, pkg.CurrVersion, pkg.Version)
+			err := packageStore.SaveOrUpdatePackage(pkg)
+			if err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "Error saving package: %s\n", err.Error())
+			}
+			fmt.Printf("Package: %s, Installed Version: %s, New Version: %s\n", pkg.Name, pkg.InstalledVersion, pkg.Version)
 		}
 	case "list_installed":
 		packages, err := pkgManager.GetPackages()
@@ -49,12 +72,21 @@ func main() {
 		}
 		for _, pkg := range packages {
 			if pkg.Installed {
-				fmt.Printf("Package: %s, Current Version: %s, New Version: %s\n", pkg.Name, pkg.CurrVersion, pkg.Version)
+				err := packageStore.SaveOrUpdatePackage(pkg)
+				if err != nil {
+					_, _ = fmt.Fprintf(os.Stderr, "Error saving package: %s\n", err.Error())
+				}
+				fmt.Printf("Package: %s, Installed Version: %s, New Version: %s\n", pkg.Name, pkg.InstalledVersion, pkg.Version)
 			}
 		}
-	case "install":
+	case "update":
 		packageName := args[0]
-		outputStream, err := pkgManager.UpdatePackageSimulation(&models.Package{Name: packageName})
+		pkg, err := packageStore.GetByName(packageName)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Error getting package: %s\n", err.Error())
+			os.Exit(1)
+		}
+		outputStream, err := pkgManager.UpdatePackageSimulation(pkg)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error simulating package installation: %s\n", err.Error())
 			os.Exit(1)
@@ -63,6 +95,19 @@ func main() {
 			fmt.Println(line)
 		}
 
+		pkg.Installed = true
+		pkg.InstalledVersion = pkg.Version
+		err = packageStore.Update(pkg)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Error updating package: %s\n", err.Error())
+			os.Exit(1)
+		}
+		err = packageStore.UpdateLastUpdate(pkg, time.Now())
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Error updating last update: %s\n", err.Error())
+			os.Exit(1)
+
+		}
 	default:
 		_, _ = fmt.Fprintf(os.Stderr, "Unsupported command: %s\n", *command)
 		os.Exit(1)
