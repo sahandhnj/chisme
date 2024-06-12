@@ -1,4 +1,4 @@
-package sqllite_store
+package sqllitestore
 
 import (
 	"database/sql"

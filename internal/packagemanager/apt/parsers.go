@@ -88,12 +88,12 @@ func shouldSkipLine(line string) bool {
 	return false
 }
 
-// extractPackageName extracts the package_manager name from the first field of the line, which is in the format pkgname/description
+// extractPackageName extracts the packagemanager name from the first field of the line, which is in the format pkgname/description
 func extractPackageName(line string) (string, error) {
 	parts := strings.Split(line, "/")
 
 	if len(parts) < 2 {
-		return "", fmt.Errorf("failed to extract package_manager name from line: %s", line)
+		return "", fmt.Errorf("failed to extract packagemanager name from line: %s", line)
 	}
 
 	return parts[0], nil
@@ -125,7 +125,7 @@ func extractInstalledVersion(fields []string) (string, error) {
 	return "", errors.New("cannot find the version")
 }
 
-// isInstalled checks if the package_manager is installed
+// isInstalled checks if the packagemanager is installed
 func isInstalled(line string) bool {
 	return strings.Contains(line, "installed") || strings.Contains(line, "upgradable")
 }

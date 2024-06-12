@@ -2,7 +2,7 @@ package apt
 
 import (
 	"errors"
-	"sahand.dev/chisme/internal/command_runner"
+	"sahand.dev/chisme/internal/commandrunner"
 	"sahand.dev/chisme/internal/persistence/models"
 	"strings"
 	"testing"
@@ -14,7 +14,7 @@ libc6/now 2.27-3ubuntu1.2 amd64 [installed]
 libc6-dev/now 2.27-3ubuntu1.2 amd64 [installed]
 0ad-data-common/noble,noble 0.0.26-1 all
 `
-	mockRunner := &command_runner.MockCommandRunner{Output: mockOutput}
+	mockRunner := &commandrunner.MockCommandRunner{Output: mockOutput}
 	apt := &Apt{
 		CLI:           "apt",
 		CommandRunner: mockRunner,
@@ -43,7 +43,7 @@ func TestApt_GetUpgradablePackages(t *testing.T) {
 libc6/now 2.27-3ubuntu1.2 amd64 [upgradable from: 2.27-3ubuntu1.1]
 libc6-dev/now 2.27-3ubuntu1.2 amd64 [upgradable from: 2.27-3ubuntu1.1]
 `
-	mockRunner := &command_runner.MockCommandRunner{Output: mockOutput}
+	mockRunner := &commandrunner.MockCommandRunner{Output: mockOutput}
 	apt := &Apt{
 		CLI:           "apt",
 		CommandRunner: mockRunner,
@@ -67,7 +67,7 @@ libc6-dev/now 2.27-3ubuntu1.2 amd64 [upgradable from: 2.27-3ubuntu1.1]
 }
 
 func TestApt_CommandRunnerError(t *testing.T) {
-	mockRunner := &command_runner.MockCommandRunner{Err: errors.New("command failed")}
+	mockRunner := &commandrunner.MockCommandRunner{Err: errors.New("command failed")}
 	apt := &Apt{
 		CLI:           "apt",
 		CommandRunner: mockRunner,
@@ -81,7 +81,7 @@ func TestApt_CommandRunnerError(t *testing.T) {
 
 func TestApt_ParseOutputError(t *testing.T) {
 	mockOutput := "invalid output"
-	mockRunner := &command_runner.MockCommandRunner{Output: mockOutput}
+	mockRunner := &commandrunner.MockCommandRunner{Output: mockOutput}
 	apt := &Apt{
 		CLI:           "apt",
 		CommandRunner: mockRunner,
@@ -94,7 +94,7 @@ func TestApt_ParseOutputError(t *testing.T) {
 }
 
 func TestGetUpgradablePackages_ReturnsListOfPackages(t *testing.T) {
-	apt := &Apt{CommandRunner: &command_runner.BashCommandRunner{}, CLI: "apt"}
+	apt := &Apt{CommandRunner: &commandrunner.BashCommandRunner{}, CLI: "apt"}
 	_, err := apt.GetUpgradablePackages()
 	if err != nil {
 		t.Fatalf("GetUpgradablePackages() failed: %v", err)
@@ -102,7 +102,7 @@ func TestGetUpgradablePackages_ReturnsListOfPackages(t *testing.T) {
 }
 
 func TestPackageVersionMismatch(t *testing.T) {
-	apt := &Apt{CommandRunner: &command_runner.BashCommandRunner{}, CLI: "apt"}
+	apt := &Apt{CommandRunner: &commandrunner.BashCommandRunner{}, CLI: "apt"}
 	packages, err := apt.GetUpgradablePackages()
 	if err != nil {
 		t.Fatalf("ListPackages() failed: %v", err)

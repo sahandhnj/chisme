@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Package represents a package_manager that can be upgraded
+// Package represents a packagemanager that can be upgraded
 type Package struct {
 	ID               int       `json:"id"`
 	Name             string    `json:"name"`

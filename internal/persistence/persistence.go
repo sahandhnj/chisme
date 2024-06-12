@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// PackageStore is an interface that represents the persistence layer for packages
 type PackageStore interface {
 	Save(pkg *models.Package) (int, error)
 	Update(pkg *models.Package) error

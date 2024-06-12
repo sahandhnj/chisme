@@ -1,7 +1,7 @@
 package apt
 
 import (
-	"sahand.dev/chisme/internal/command_runner"
+	"sahand.dev/chisme/internal/commandrunner"
 	"sahand.dev/chisme/internal/persistence/models"
 	"strings"
 	"testing"
@@ -17,7 +17,7 @@ The following packages will be upgraded:
 Inst libc6 [2.27-3ubuntu1.1] (2.27-3ubuntu1.2 Ubuntu:18.04/bionic [amd64])
 Conf libc6 (2.27-3ubuntu1.2 Ubuntu:18.04/bionic [amd64])`
 
-	mockRunner := &command_runner.MockCommandRunner{Output: mockOutput}
+	mockRunner := &commandrunner.MockCommandRunner{Output: mockOutput}
 	apt := &Apt{
 		CommandRunner: mockRunner,
 		CLI:           "apt",

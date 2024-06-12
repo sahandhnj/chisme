@@ -2,14 +2,14 @@ package apt
 
 import (
 	"fmt"
-	"sahand.dev/chisme/internal/command_runner"
+	"sahand.dev/chisme/internal/commandrunner"
 	"sahand.dev/chisme/internal/persistence/models"
 )
 
-// Apt is a struct that represents the apt package_manager manager
+// Apt is a struct that represents the apt packagemanager manager
 type Apt struct {
 	CLI           string
-	CommandRunner command_runner.CommandRunner
+	CommandRunner commandrunner.CommandRunner
 }
 
 // GetPackages lists all packages and returns them as a slice of Package structs

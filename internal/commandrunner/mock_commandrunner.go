@@ -1,4 +1,4 @@
-package command_runner
+package commandrunner
 
 import (
 	"bufio"
@@ -19,6 +19,7 @@ func (m *MockCommandRunner) RunCommand(command string) (*bufio.Scanner, error) {
 	return bufio.NewScanner(strings.NewReader(m.Output)), nil
 }
 
+// RunCommandAsync mocks the execution of a command asynchronously and returns predefined output and error
 func (m *MockCommandRunner) RunCommandAsync(command string) (<-chan string, <-chan error, error) {
 	if m.Err != nil {
 		return nil, nil, m.Err

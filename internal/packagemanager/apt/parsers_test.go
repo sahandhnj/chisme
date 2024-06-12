@@ -117,7 +117,7 @@ func TestParseLineToPackage(t *testing.T) {
 		err      error
 	}{
 		{
-			name: "upgradable package_manager",
+			name: "upgradable packagemanager",
 			line: "libc6/now 2.27-3ubuntu1.2 amd64 [upgradable from: 2.27-3ubuntu1.1]",
 			expected: &models.Package{
 				Name:             "libc6",
@@ -128,7 +128,7 @@ func TestParseLineToPackage(t *testing.T) {
 			err: nil,
 		},
 		{
-			name: "installed package_manager",
+			name: "installed packagemanager",
 			line: "yudit-common/noble,noble,now 3.1.0-1 all [installed,automatic]",
 			expected: &models.Package{
 				Name:             "yudit-common",
@@ -139,7 +139,7 @@ func TestParseLineToPackage(t *testing.T) {
 			err: nil,
 		},
 		{
-			name: "installed package_manager with same version",
+			name: "installed packagemanager with same version",
 			line: "yaru-theme-gtk/noble,noble,now 24.04.2-0ubuntu1 all [installed]",
 			expected: &models.Package{
 				Name:             "yaru-theme-gtk",
@@ -191,7 +191,7 @@ func TestShouldSkipLine(t *testing.T) {
 		{"", true},
 		{"WARNING", true},
 		{"Listing...", true},
-		{"some package_manager", false},
+		{"some packagemanager", false},
 	}
 
 	for _, tt := range tests {
@@ -240,13 +240,13 @@ func TestExtractVersion(t *testing.T) {
 	}{
 		{
 			name:     "valid version",
-			fields:   []string{"package_manager-name", "1.0.0"},
+			fields:   []string{"packagemanager-name", "1.0.0"},
 			expected: "1.0.0",
 			err:      nil,
 		},
 		{
 			name:     "missing version field",
-			fields:   []string{"package_manager-name"},
+			fields:   []string{"packagemanager-name"},
 			expected: "",
 			err:      fmt.Errorf("version field is missing"),
 		},
@@ -274,26 +274,26 @@ func TestExtractCurrentVersion(t *testing.T) {
 		err      bool
 	}{
 		{
-			name:     "upgradable package_manager",
-			fields:   []string{"package_manager-name", "1.0.0", "dist", "[upgradable", "from:", "0.9.0]"},
+			name:     "upgradable packagemanager",
+			fields:   []string{"packagemanager-name", "1.0.0", "dist", "[upgradable", "from:", "0.9.0]"},
 			expected: "0.9.0",
 			err:      false,
 		},
 		{
-			name:     "installed package_manager",
-			fields:   []string{"package_manager-name", "1.0.0", "[installed]"},
+			name:     "installed packagemanager",
+			fields:   []string{"packagemanager-name", "1.0.0", "[installed]"},
 			expected: "1.0.0",
 			err:      false,
 		},
 		{
 			name:     "missing installed version",
-			fields:   []string{"package_manager-name", "1.0.0"},
+			fields:   []string{"packagemanager-name", "1.0.0"},
 			expected: "1.0.0",
 			err:      false,
 		},
 		{
 			name:     "invalid upgradable field",
-			fields:   []string{"package_manager-name"},
+			fields:   []string{"packagemanager-name"},
 			expected: "",
 			err:      true,
 		},
@@ -320,13 +320,13 @@ func TestIsInstalled(t *testing.T) {
 		expected bool
 	}{
 		{
-			name:     "installed package_manager",
-			line:     "package_manager-name 1.0.0 [installed]",
+			name:     "installed packagemanager",
+			line:     "packagemanager-name 1.0.0 [installed]",
 			expected: true,
 		},
 		{
-			name:     "not installed package_manager",
-			line:     "package_manager-name 1.0.0",
+			name:     "not installed packagemanager",
+			line:     "packagemanager-name 1.0.0",
 			expected: false,
 		},
 	}
