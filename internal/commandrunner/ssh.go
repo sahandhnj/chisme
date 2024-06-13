@@ -15,7 +15,7 @@ type SSHCommandRunner struct {
 	config SSHConfig
 }
 
-// SSHConfig holds the configuration for the ssh connection
+// SSHConfig holds the configuration for the sshrunner connection
 type SSHConfig struct {
 	host               string
 	port               int
@@ -51,11 +51,11 @@ func validateConfig(config SSHConfig) error {
 	return nil
 }
 
-// RunCommand runs a command over an ssh connection and returns the output as a scanner
+// RunCommand runs a command over a sshrunner connection and returns the output as a scanner
 func (s *SSHCommandRunner) RunCommand(command string) (*bufio.Scanner, error) {
 	client, err := connectToSSH(&s.config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to ssh: %w", err)
+		return nil, fmt.Errorf("failed to connect to sshrunner: %w", err)
 	}
 	defer client.Close()
 
@@ -73,14 +73,14 @@ func (s *SSHCommandRunner) RunCommand(command string) (*bufio.Scanner, error) {
 	return bufio.NewScanner(bytes.NewReader(output)), nil
 }
 
-// RunCommandAsync runs a command over an ssh connection asynchronously and returns a channel with the output lines
+// RunCommandAsync runs a command over an sshrunner connection asynchronously and returns a channel with the output lines
 func (s *SSHCommandRunner) RunCommandAsync(command string) (<-chan string, <-chan error, error) {
 	output := make(chan string, 10)
 	errorsChan := make(chan error)
 
 	client, err := connectToSSH(&s.config)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to connect to ssh: %w", err)
+		return nil, nil, fmt.Errorf("failed to connect to sshrunner: %w", err)
 	}
 
 	session, err := client.NewSession()
@@ -89,47 +89,17 @@ func (s *SSHCommandRunner) RunCommandAsync(command string) (<-chan string, <-cha
 		return nil, nil, fmt.Errorf("failed to create session: %w", err)
 	}
 
-	stdOut, err := session.StdoutPipe()
+	stdOut, stdErr, err := setupSshPipes(session)
 	if err != nil {
-		session.Close()
-		client.Close()
-		return nil, nil, fmt.Errorf("failed to get stdout pipe: %w", err)
-	}
-
-	stdErr, err := session.StderrPipe()
-	if err != nil {
-		session.Close()
-		client.Close()
-		return nil, nil, fmt.Errorf("failed to get stderr pipe: %w", err)
+		closeResources(session, client)
+		return nil, nil, err
 	}
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	go func() {
-		defer wg.Done()
-
-		scanner := bufio.NewScanner(io.MultiReader(stdOut, stdErr))
-		for scanner.Scan() {
-			output <- scanner.Text()
-		}
-		if err := scanner.Err(); err != nil {
-			errorsChan <- fmt.Errorf("error reading stderr: %w", err)
-		}
-	}()
-
-	go func() {
-		defer close(output)
-		defer close(errorsChan)
-		defer client.Close()
-		defer session.Close()
-
-		if err := session.Run(command); err != nil {
-			errorsChan <- fmt.Errorf("failed to run command: %w", err)
-		}
-
-		wg.Wait()
-	}()
+	go handleSshOutput(stdOut, stdErr, output, errorsChan, &wg)
+	go runSshCommand(session, command, output, errorsChan, client, &wg)
 
 	return output, errorsChan, nil
 }
@@ -183,4 +153,51 @@ func getPublicKeySignerFromPrivateKey(privateKey []byte, password string) (ssh.S
 		}
 	}
 	return signer, nil
+}
+
+// setupSshPipes sets up the stdout and stderr pipes for the session
+func setupSshPipes(session *ssh.Session) (io.Reader, io.Reader, error) {
+	stdOut, err := session.StdoutPipe()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get stdout pipe: %w", err)
+	}
+
+	stdErr, err := session.StderrPipe()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get stderr pipe: %w", err)
+	}
+	return stdOut, stdErr, nil
+}
+
+// runSshCommand runs the provided command on the session and sends the output to the output channel
+func runSshCommand(session *ssh.Session, command string, output chan<- string, errorsChan chan<- error, client *ssh.Client, wg *sync.WaitGroup) {
+	defer closeResources(session, client)
+	defer close(output)
+	defer close(errorsChan)
+	if err := session.Run(command); err != nil {
+		errorsChan <- fmt.Errorf("failed to run command: %w", err)
+	}
+	wg.Wait()
+}
+
+// handleSshOutput reads from the stdout and stderr pipes and sends the output to the output channel
+func handleSshOutput(stdOut, stdErr io.Reader, output chan<- string, errorsChan chan<- error, wg *sync.WaitGroup) {
+	defer wg.Done()
+	scanner := bufio.NewScanner(io.MultiReader(stdOut, stdErr))
+	for scanner.Scan() {
+		output <- scanner.Text()
+	}
+	if err := scanner.Err(); err != nil {
+		errorsChan <- fmt.Errorf("error reading stderr: %w", err)
+	}
+}
+
+// closeResources closes the session and client
+func closeResources(session *ssh.Session, client *ssh.Client) {
+	if session != nil {
+		session.Close()
+	}
+	if client != nil {
+		client.Close()
+	}
 }

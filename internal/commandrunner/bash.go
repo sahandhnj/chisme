@@ -30,13 +30,11 @@ func (b *BashCommandRunner) RunCommandAsync(command string) (<-chan string, <-ch
 
 	cmd := exec.Command("bash", "-c", command)
 
-	// Setup command
-	stdOut, stdErr, err := setupCommand(cmd)
+	stdOut, stdErr, err := setupCmdPipes(cmd)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to setup command: %w", err)
 	}
 
-	// Start command
 	err = cmd.Start()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to start command: %w", err)
@@ -45,7 +43,7 @@ func (b *BashCommandRunner) RunCommandAsync(command string) (<-chan string, <-ch
 	go func() {
 		defer close(output)
 		defer close(errorsChan)
-		pipeCommandOutputLineByLine(stdOut, stdErr, output, errorsChan)
+		handleCmdOutput(stdOut, stdErr, output, errorsChan)
 
 		if err := cmd.Wait(); err != nil {
 			errorsChan <- fmt.Errorf("command finished with error: %w", err)
@@ -55,8 +53,8 @@ func (b *BashCommandRunner) RunCommandAsync(command string) (<-chan string, <-ch
 	return output, errorsChan, nil
 }
 
-// setupCommand sets up the command and returns the stdout and stderr pipes
-func setupCommand(cmd *exec.Cmd) (io.ReadCloser, io.ReadCloser, error) {
+// setupCmdPipes sets up the command and returns the stdout and stderr pipes
+func setupCmdPipes(cmd *exec.Cmd) (io.ReadCloser, io.ReadCloser, error) {
 	stdOut, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get stdout pipe: %w", err)
@@ -65,11 +63,11 @@ func setupCommand(cmd *exec.Cmd) (io.ReadCloser, io.ReadCloser, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get stderr pipe: %w", err)
 	}
-	return stdOut, stdErr, err
+	return stdOut, stdErr, nil
 }
 
-// pipeCommandOutputLineByLine pipes the command output line by line to the output channel
-func pipeCommandOutputLineByLine(stdOut io.Reader, stdErr io.Reader, output chan string, errorsChan chan error) {
+// handleCmdOutput pipes the command output line by line to the output channel
+func handleCmdOutput(stdOut, stdErr io.Reader, output chan string, errorsChan chan error) {
 	scanner := bufio.NewScanner(io.MultiReader(stdOut, stdErr))
 	for scanner.Scan() {
 		output <- scanner.Text()
