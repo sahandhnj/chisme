@@ -12,10 +12,10 @@ func startSSHRunner(t *testing.T) (*SSHCommandRunner, func()) {
 	stopServer := startTestSSHServer(t)
 
 	config := SSHConfig{
-		host:       "127.0.0.1",
-		port:       9090,
-		user:       "test",
-		privateKey: generateClientPrivateKey(t),
+		Host:       "127.0.0.1",
+		Port:       9090,
+		User:       "test",
+		PrivateKey: generateClientPrivateKey(t),
 	}
 
 	runner, err := NewSSHCommandRunner(config)

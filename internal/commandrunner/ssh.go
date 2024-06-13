@@ -17,11 +17,11 @@ type SSHCommandRunner struct {
 
 // SSHConfig holds the configuration for the sshrunner connection
 type SSHConfig struct {
-	host               string
-	port               int
-	user               string
-	privateKey         []byte
-	privateKeyPassword string
+	Host               string
+	Port               int
+	User               string
+	PrivateKey         []byte
+	PrivateKeyPassword string
 }
 
 // NewSSHCommandRunner creates a new SSHCommandRunner
@@ -36,16 +36,16 @@ func NewSSHCommandRunner(config SSHConfig) (*SSHCommandRunner, error) {
 
 // validateConfig checks that all required fields are present in the config
 func validateConfig(config SSHConfig) error {
-	if config.host == "" {
+	if config.Host == "" {
 		return fmt.Errorf("host is required")
 	}
-	if config.port == 0 {
+	if config.Port == 0 {
 		return fmt.Errorf("port is required")
 	}
-	if config.user == "" {
+	if config.User == "" {
 		return fmt.Errorf("user is required")
 	}
-	if len(config.privateKey) == 0 {
+	if len(config.PrivateKey) == 0 {
 		return fmt.Errorf("private key is required")
 	}
 	return nil
@@ -111,7 +111,7 @@ func connectToSSH(config *SSHConfig) (*ssh.Client, error) {
 		return nil, fmt.Errorf("failed to setup ssh config: %w", err)
 	}
 
-	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", config.host, config.port), clientConfig)
+	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", config.Host, config.Port), clientConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial ssh: %w", err)
 	}
@@ -121,13 +121,13 @@ func connectToSSH(config *SSHConfig) (*ssh.Client, error) {
 
 // setupSSHConfig sets up the ssh client config by reading the private key and parsing it
 func setupSSHConfig(config *SSHConfig) (*ssh.ClientConfig, error) {
-	signer, err := getPublicKeySignerFromPrivateKey(config.privateKey, config.privateKeyPassword)
+	signer, err := getPublicKeySignerFromPrivateKey(config.PrivateKey, config.PrivateKeyPassword)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get public key signer from private key: %w", err)
 	}
 
 	return &ssh.ClientConfig{
-		User: config.user,
+		User: config.User,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(signer),
 		},
