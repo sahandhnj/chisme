@@ -69,7 +69,7 @@ func setupCommand(cmd *exec.Cmd) (io.ReadCloser, io.ReadCloser, error) {
 }
 
 // pipeCommandOutputLineByLine pipes the command output line by line to the output channel
-func pipeCommandOutputLineByLine(stdOut io.ReadCloser, stdErr io.ReadCloser, output chan string, errorsChan chan error) {
+func pipeCommandOutputLineByLine(stdOut io.Reader, stdErr io.Reader, output chan string, errorsChan chan error) {
 	scanner := bufio.NewScanner(io.MultiReader(stdOut, stdErr))
 	for scanner.Scan() {
 		output <- scanner.Text()

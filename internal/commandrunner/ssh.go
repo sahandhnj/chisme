@@ -1,0 +1,186 @@
+package commandrunner
+
+import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"golang.org/x/crypto/ssh"
+	"io"
+	"sync"
+	"time"
+)
+
+// SSHCommandRunner implements CommandRunner for running bash commands over an SSH connection
+type SSHCommandRunner struct {
+	config SSHConfig
+}
+
+// SSHConfig holds the configuration for the ssh connection
+type SSHConfig struct {
+	host               string
+	port               int
+	user               string
+	privateKey         []byte
+	privateKeyPassword string
+}
+
+// NewSSHCommandRunner creates a new SSHCommandRunner
+func NewSSHCommandRunner(config SSHConfig) (*SSHCommandRunner, error) {
+	if err := validateConfig(config); err != nil {
+		return nil, err
+	}
+	return &SSHCommandRunner{
+		config: config,
+	}, nil
+}
+
+// validateConfig checks that all required fields are present in the config
+func validateConfig(config SSHConfig) error {
+	if config.host == "" {
+		return fmt.Errorf("host is required")
+	}
+	if config.port == 0 {
+		return fmt.Errorf("port is required")
+	}
+	if config.user == "" {
+		return fmt.Errorf("user is required")
+	}
+	if len(config.privateKey) == 0 {
+		return fmt.Errorf("private key is required")
+	}
+	return nil
+}
+
+// RunCommand runs a command over an ssh connection and returns the output as a scanner
+func (s *SSHCommandRunner) RunCommand(command string) (*bufio.Scanner, error) {
+	client, err := connectToSSH(&s.config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to ssh: %w", err)
+	}
+	defer client.Close()
+
+	session, err := client.NewSession()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session: %w", err)
+	}
+	defer session.Close()
+
+	output, err := session.CombinedOutput(command)
+	if err != nil {
+		return nil, err
+	}
+
+	return bufio.NewScanner(bytes.NewReader(output)), nil
+}
+
+// RunCommandAsync runs a command over an ssh connection asynchronously and returns a channel with the output lines
+func (s *SSHCommandRunner) RunCommandAsync(command string) (<-chan string, <-chan error, error) {
+	output := make(chan string, 10)
+	errorsChan := make(chan error)
+
+	client, err := connectToSSH(&s.config)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to connect to ssh: %w", err)
+	}
+
+	session, err := client.NewSession()
+	if err != nil {
+		client.Close()
+		return nil, nil, fmt.Errorf("failed to create session: %w", err)
+	}
+
+	stdOut, err := session.StdoutPipe()
+	if err != nil {
+		session.Close()
+		client.Close()
+		return nil, nil, fmt.Errorf("failed to get stdout pipe: %w", err)
+	}
+
+	stdErr, err := session.StderrPipe()
+	if err != nil {
+		session.Close()
+		client.Close()
+		return nil, nil, fmt.Errorf("failed to get stderr pipe: %w", err)
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+
+		scanner := bufio.NewScanner(io.MultiReader(stdOut, stdErr))
+		for scanner.Scan() {
+			output <- scanner.Text()
+		}
+		if err := scanner.Err(); err != nil {
+			errorsChan <- fmt.Errorf("error reading stderr: %w", err)
+		}
+	}()
+
+	go func() {
+		defer close(output)
+		defer close(errorsChan)
+		defer client.Close()
+		defer session.Close()
+
+		if err := session.Run(command); err != nil {
+			errorsChan <- fmt.Errorf("failed to run command: %w", err)
+		}
+
+		wg.Wait()
+	}()
+
+	return output, errorsChan, nil
+}
+
+// connectToSSH connects to an ssh server using the provided configuration
+func connectToSSH(config *SSHConfig) (*ssh.Client, error) {
+	clientConfig, err := setupSSHConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to setup ssh config: %w", err)
+	}
+
+	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", config.host, config.port), clientConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial ssh: %w", err)
+	}
+
+	return client, nil
+}
+
+// setupSSHConfig sets up the ssh client config by reading the private key and parsing it
+func setupSSHConfig(config *SSHConfig) (*ssh.ClientConfig, error) {
+	signer, err := getPublicKeySignerFromPrivateKey(config.privateKey, config.privateKeyPassword)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get public key signer from private key: %w", err)
+	}
+
+	return &ssh.ClientConfig{
+		User: config.user,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(signer),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         10 * time.Second,
+	}, nil
+}
+
+// getPublicKeySignerFromPrivateKey returns a signer from the provided private key
+func getPublicKeySignerFromPrivateKey(privateKey []byte, password string) (ssh.Signer, error) {
+	var signer ssh.Signer
+	var err error
+	switch password {
+	case "":
+		signer, err = ssh.ParsePrivateKey(privateKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse private key: %w", err)
+		}
+	default:
+		signer, err = ssh.ParsePrivateKeyWithPassphrase(privateKey, []byte(password))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse private key with passphrase: %w", err)
+		}
+	}
+	return signer, nil
+}

@@ -33,28 +33,6 @@ func TestBashCommandRunner_RunCommand_NoExistingCommand(t *testing.T) {
 	}
 }
 
-func readFromChannels(t *testing.T, output <-chan string, outputError <-chan error) (string, error) {
-	t.Helper()
-
-	var got strings.Builder
-
-	done := make(chan struct{})
-	go func() {
-		for line := range output {
-			got.WriteString(line)
-		}
-		close(done)
-	}()
-
-	var err error
-	select {
-	case err = <-outputError:
-	case <-done:
-	}
-
-	return got.String(), err
-}
-
 func TestBashCommandRunner_RunCommandAsync(t *testing.T) {
 	cmdRunner := BashCommandRunner{}
 
