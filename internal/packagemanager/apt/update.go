@@ -25,10 +25,26 @@ func (a *Apt) UpdatePackageSimulation(pkg *models.Package) (<-chan string, error
 }
 
 // UpdatePackage updates a package and returns a channel to read the output and also listens
-// on stderr and in case of err it will terminate the process and return the error
+// on stderr and in case of error it will terminate the process and return the error
 func (a *Apt) UpdatePackage(pkg *models.Package, output chan<- string) error {
 	command := fmt.Sprintf("%s install --only-upgrade --simulate %s", a.CLI, pkg.Name)
+	return a.exec(command, output)
+}
 
+// UpdateAllPackages updates all packages and returns a channel to read the output and also listens
+// on stderr and in case of error it will terminate the process and return the error
+func (a *Apt) UpdateAllPackages(output chan<- string) error {
+	command := fmt.Sprintf("%s upgrade -y", a.CLI)
+	return a.exec(command, output)
+}
+
+func (a *Apt) refresh(output chan<- string) error {
+	command := fmt.Sprintf("%s update", a.CLI)
+	return a.exec(command, output)
+}
+
+// exec runs the specified command and manages stdout and stderr
+func (a *Apt) exec(command string, output chan<- string) error {
 	stdOutput, outputErrors, err := a.CommandRunner.RunCommandAsync(command)
 	if err != nil {
 		return fmt.Errorf("failed to execute command: %s, err: %w", command, err)

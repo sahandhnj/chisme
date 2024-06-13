@@ -178,7 +178,38 @@ func updatePackage(pkgManager packagemanager.PackageManger, packageStore persist
 }
 
 func updateAllPackages(pkgManager packagemanager.PackageManger, packageStore persistence.PackageStore) {
-	// Implementation for updating all packages
+	outputStream := make(chan string)
+	go func() {
+		for line := range outputStream {
+			fmt.Println(line)
+		}
+	}()
+	if err := pkgManager.UpdateAllPackages(outputStream); err != nil {
+		log.Fatalf("Error updating package: %s", err)
+	}
+
+	packages, err := pkgManager.GetUpgradablePackages()
+	if err != nil {
+		log.Fatalf("Error listing upgradable packages: %s", err)
+	}
+	for _, aptPackage := range packages {
+		pkg, _ := packageStore.GetByName(aptPackage.Name)
+		if pkg == nil {
+			pkg.LastUpdated = time.Now()
+			if err := packageStore.SaveOrUpdatePackage(pkg); err != nil {
+				log.Printf("Error saving package: %s", err)
+			}
+		} else if pkg.InstalledVersion != aptPackage.InstalledVersion {
+			pkg.InstalledVersion = aptPackage.InstalledVersion
+			if err := packageStore.Update(pkg); err != nil {
+				log.Printf("Error updating package: %s", err)
+			}
+			if err := packageStore.UpdateLastUpdate(pkg, time.Now()); err != nil {
+				log.Printf("Error updating package: %s", err)
+			}
+		}
+		fmt.Printf("Package: %s, Installed Version: %s, New Version: %s\n", pkg.Name, pkg.InstalledVersion, pkg.Version)
+	}
 }
 
 // Utility functions for environment variables

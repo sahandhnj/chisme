@@ -2,7 +2,6 @@ package apt
 
 import (
 	"errors"
-	"fmt"
 	"sahand.dev/chisme/internal/commandrunner"
 	"sahand.dev/chisme/internal/persistence/models"
 	"strings"
@@ -69,7 +68,6 @@ func TestUpdatePackage_Success(t *testing.T) {
 
 	expectedLines := []string{"line1", "line2", "line3"}
 	if len(lines) != len(expectedLines) {
-		fmt.Println(lines)
 		t.Fatalf("expected %d lines, got %d", len(expectedLines), len(lines))
 	}
 	for i, line := range lines {
