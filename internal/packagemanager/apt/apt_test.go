@@ -67,7 +67,7 @@ libc6-dev/now 2.27-3ubuntu1.2 amd64 [upgradable from: 2.27-3ubuntu1.1]
 }
 
 func TestApt_CommandRunnerError(t *testing.T) {
-	mockRunner := &commandrunner.MockCommandRunner{Err: errors.New("command failed")}
+	mockRunner := &commandrunner.MockCommandRunner{Err: []error{errors.New("command failed")}}
 	apt := &Apt{
 		CLI:           "apt",
 		CommandRunner: mockRunner,

@@ -9,4 +9,5 @@ type PackageManger interface {
 	GetPackages() ([]*models.Package, error)
 	GetUpgradablePackages() ([]*models.Package, error)
 	UpdatePackageSimulation(pkg *models.Package) (<-chan string, error)
+	UpdatePackage(pkg *models.Package, output chan<- string) error
 }

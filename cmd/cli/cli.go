@@ -31,7 +31,7 @@ func main() {
 	packageStore = sqllitestore.NewSQLitePackageStore(db)
 
 	// Define command-line arguments
-	packageManager := flag.String("packagemanager", "apt", "The packagemanager manager to use (e.g., apt, yum)")
+	packageManager := flag.String("package_manager", "apt", "The packagemanager manager to use (e.g., apt, yum)")
 	command := flag.String("command", "list_upgradable", "The command to run (e.g., list_upgradable, update, remove, install)")
 
 	flag.Parse()
@@ -80,19 +80,29 @@ func main() {
 			}
 		}
 	case "update":
+		if len(args) == 0 {
+			_, _ = fmt.Fprintf(os.Stderr, "Package name required for update command\n")
+			os.Exit(1)
+		}
+
 		packageName := args[0]
 		pkg, err := packageStore.GetByName(packageName)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error getting package: %s\n", err.Error())
 			os.Exit(1)
 		}
-		outputStream, err := pkgManager.UpdatePackageSimulation(pkg)
+
+		outputStream := make(chan string)
+		go func() {
+			for line := range outputStream {
+				fmt.Println(line)
+			}
+		}()
+
+		err = pkgManager.UpdatePackage(pkg, outputStream)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error simulating package installation: %s\n", err.Error())
 			os.Exit(1)
-		}
-		for line := range outputStream {
-			fmt.Println(line)
 		}
 
 		pkg.Installed = true
@@ -102,6 +112,7 @@ func main() {
 			_, _ = fmt.Fprintf(os.Stderr, "Error updating package: %s\n", err.Error())
 			os.Exit(1)
 		}
+
 		err = packageStore.UpdateLastUpdate(pkg, time.Now())
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Error updating last update: %s\n", err.Error())
