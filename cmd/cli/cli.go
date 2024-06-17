@@ -178,15 +178,12 @@ func updatePackage(pkgManager packagemanager.PackageManger, packageStore persist
 }
 
 func updateAllPackages(pkgManager packagemanager.PackageManger, packageStore persistence.PackageStore) {
-	outputStream := make(chan string)
-	go func() {
-		for line := range outputStream {
-			fmt.Println(line)
-		}
-	}()
-	if err := pkgManager.UpdateAllPackages(outputStream); err != nil {
+	if err := executeFunctionWithStreamOutput(pkgManager.Refresh); err != nil {
 		log.Fatalf("Error updating package: %s", err)
 	}
+	//if err := executeFunctionWithStreamOutput(pkgManager.UpdateAllPackages); err != nil {
+	//	log.Fatalf("Error updating package: %s", err)
+	//}
 
 	packages, err := pkgManager.GetUpgradablePackages()
 	if err != nil {
@@ -231,4 +228,15 @@ func getEnvAsInt(key string, fallback int) int {
 		return fallback
 	}
 	return value
+}
+
+func executeFunctionWithStreamOutput(fn func(output chan<- string) error) error {
+	outputStream := make(chan string)
+	go func() {
+		for line := range outputStream {
+			fmt.Println(line)
+		}
+	}()
+	err := fn(outputStream)
+	return err
 }

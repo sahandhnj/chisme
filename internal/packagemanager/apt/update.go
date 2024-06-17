@@ -28,6 +28,8 @@ func (a *Apt) UpdatePackageSimulation(pkg *models.Package) (<-chan string, error
 // on stderr and in case of error it will terminate the process and return the error
 func (a *Apt) UpdatePackage(pkg *models.Package, output chan<- string) error {
 	command := fmt.Sprintf("%s install --only-upgrade --simulate %s", a.CLI, pkg.Name)
+	applyCommandRootElevation(&command)
+
 	return a.exec(command, output)
 }
 
@@ -35,12 +37,21 @@ func (a *Apt) UpdatePackage(pkg *models.Package, output chan<- string) error {
 // on stderr and in case of error it will terminate the process and return the error
 func (a *Apt) UpdateAllPackages(output chan<- string) error {
 	command := fmt.Sprintf("%s upgrade -y", a.CLI)
+	applyCommandRootElevation(&command)
+
 	return a.exec(command, output)
 }
 
-func (a *Apt) refresh(output chan<- string) error {
+func (a *Apt) Refresh(output chan<- string) error {
 	command := fmt.Sprintf("%s update", a.CLI)
+	applyCommandRootElevation(&command)
+
 	return a.exec(command, output)
+}
+
+// applyCommandRootElevation applies the root elevation to the command by adding sudo
+func applyCommandRootElevation(command *string) {
+	*command = fmt.Sprintf("sudo -S %s", *command)
 }
 
 // exec runs the specified command and manages stdout and stderr

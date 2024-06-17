@@ -210,3 +210,14 @@ func TestUpdatePackage_LongRunning(t *testing.T) {
 		}
 	}
 }
+
+func TestApplyCommandRootElevation_ShouldElevate(t *testing.T) {
+	command := "apt install"
+	expected := "sudo apt install"
+
+	applyCommandRootElevation(&command)
+
+	if command != expected {
+		t.Errorf("expected %q, got %q", expected, command)
+	}
+}
