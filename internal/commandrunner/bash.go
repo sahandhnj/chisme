@@ -9,14 +9,15 @@ import (
 )
 
 // BashCommandRunner implements CommandRunner for bash commands
-type BashCommandRunner struct{}
+type BashCommandRunner struct {
+}
 
 // RunCommand runs a bash command and returns the output as a scanner
-func (b *BashCommandRunner) RunCommand(command string) (*bufio.Scanner, error) {
-	cmd := exec.Command("bash", "-c", command)
+func (b *BashCommandRunner) RunCommand(ec ExecCommand) (*bufio.Scanner, error) {
+	cmd := exec.Command("bash", "-c", ec.Command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("command execution failed: %w", err)
+		return nil, fmt.Errorf("ec execution failed: %w", err)
 	}
 
 	scanner := bufio.NewScanner(bytes.NewReader(output))
@@ -24,20 +25,20 @@ func (b *BashCommandRunner) RunCommand(command string) (*bufio.Scanner, error) {
 }
 
 // RunCommandAsync runs a bash command asynchronously and returns a channel with the output lines
-func (b *BashCommandRunner) RunCommandAsync(command string) (<-chan string, <-chan error, error) {
+func (b *BashCommandRunner) RunCommandAsync(ec ExecCommand) (<-chan string, <-chan error, error) {
 	output := make(chan string, 10)
 	errorsChan := make(chan error)
 
-	cmd := exec.Command("bash", "-c", command)
+	cmd := exec.Command("bash", "-c", ec.Command)
 
 	stdOut, stdErr, err := setupCmdPipes(cmd)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to setup command: %w", err)
+		return nil, nil, fmt.Errorf("failed to setup ec: %w", err)
 	}
 
 	err = cmd.Start()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to start command: %w", err)
+		return nil, nil, fmt.Errorf("failed to start ec: %w", err)
 	}
 
 	go func() {
@@ -46,7 +47,7 @@ func (b *BashCommandRunner) RunCommandAsync(command string) (<-chan string, <-ch
 		handleCmdOutput(stdOut, stdErr, output, errorsChan)
 
 		if err := cmd.Wait(); err != nil {
-			errorsChan <- fmt.Errorf("command finished with error: %w", err)
+			errorsChan <- fmt.Errorf("ec finished with error: %w", err)
 		}
 	}()
 

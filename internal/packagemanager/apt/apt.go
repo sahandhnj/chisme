@@ -16,7 +16,7 @@ type Apt struct {
 func (a *Apt) GetPackages() ([]*models.Package, error) {
 	command := fmt.Sprintf("%s list", a.CLI)
 
-	scanner, err := a.CommandRunner.RunCommand(command)
+	scanner, err := a.CommandRunner.RunCommand(commandrunner.ExecCommand{Command: command})
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute command: %s, err: %w", command, err)
 	}
@@ -34,7 +34,7 @@ func (a *Apt) GetPackages() ([]*models.Package, error) {
 func (a *Apt) GetUpgradablePackages() ([]*models.Package, error) {
 	command := fmt.Sprintf("%s list --upgradable", a.CLI)
 
-	scanner, err := a.CommandRunner.RunCommand(command)
+	scanner, err := a.CommandRunner.RunCommand(commandrunner.ExecCommand{Command: command})
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute command: %s, err: %w", command, err)
 	}

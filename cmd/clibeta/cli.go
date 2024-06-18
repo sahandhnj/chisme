@@ -17,7 +17,7 @@ func main() {
 	command := strings.Join(os.Args[1:], " ")
 	cmdRunner := &commandrunner.BashCommandRunner{}
 
-	output, errorsChan, err := cmdRunner.RunCommandAsync(command)
+	output, errorsChan, err := cmdRunner.RunCommandAsync(commandrunner.ExecCommand{Command: command})
 	if err != nil {
 		log.Fatalf("Failed to run command: %v", err)
 	}

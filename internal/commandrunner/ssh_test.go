@@ -29,7 +29,7 @@ func TestSSHCommandRunner_RunCommand(t *testing.T) {
 	runner, stopServer := startSSHRunner(t)
 	defer stopServer()
 
-	scanner, err := runner.RunCommand("echo Hello, World!")
+	scanner, err := runner.RunCommand(ExecCommand{Command: "echo Hello, World!"})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -45,7 +45,7 @@ func TestSSHCommandRunner_RunCommand_UnknownCommand(t *testing.T) {
 	runner, stopServer := startSSHRunner(t)
 	defer stopServer()
 
-	_, err := runner.RunCommand("uknown-command")
+	_, err := runner.RunCommand(ExecCommand{Command: "uknown-command"})
 	if err == nil {
 		t.Fatalf("expected an error, got nil")
 	}
@@ -56,7 +56,7 @@ func TestSSHCommandRunner_RunCommand_LargeOutput(t *testing.T) {
 	defer stopServer()
 
 	largeText := strings.Repeat("A", 10000)
-	scanner, err := runner.RunCommand(fmt.Sprintf("echo %s", largeText))
+	scanner, err := runner.RunCommand(ExecCommand{Command: fmt.Sprintf("echo %s", largeText)})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -73,7 +73,7 @@ func TestSSHCommandRunner_RunCommandAsync(t *testing.T) {
 	defer stopServer()
 
 	t.Run("EchoCommand", func(t *testing.T) {
-		output, outputError, err := runner.RunCommandAsync("echo Hello, World!")
+		output, outputError, err := runner.RunCommandAsync(ExecCommand{Command: "echo Hello, World!"})
 		if err != nil {
 			t.Fatalf("RunCommandAsync() failed, error = %v", err)
 		}
@@ -90,7 +90,7 @@ func TestSSHCommandRunner_RunCommandAsync(t *testing.T) {
 	})
 
 	t.Run("CommandWithError", func(t *testing.T) {
-		output, outputError, err := runner.RunCommandAsync("invalid_command")
+		output, outputError, err := runner.RunCommandAsync(ExecCommand{Command: "invalid_command"})
 		if err != nil {
 			t.Fatalf("RunCommandAsync() failed, error = %v", err)
 		}
@@ -117,7 +117,7 @@ func TestSSHCommandRunner_RunCommand_Concurrent(t *testing.T) {
 
 	for _, cmd := range commands {
 		go func(command string) {
-			scanner, err := runner.RunCommand(command)
+			scanner, err := runner.RunCommand(ExecCommand{Command: command})
 			if err != nil {
 				errors <- err
 				return

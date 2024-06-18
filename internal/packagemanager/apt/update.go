@@ -3,6 +3,7 @@ package apt
 import (
 	"fmt"
 	"log"
+	"sahand.dev/chisme/internal/commandrunner"
 	"sahand.dev/chisme/internal/persistence/models"
 )
 
@@ -10,7 +11,7 @@ import (
 func (a *Apt) UpdatePackageSimulation(pkg *models.Package) (<-chan string, error) {
 	command := fmt.Sprintf("%s install --only-upgrade --simulate %s", a.CLI, pkg.Name)
 
-	output, outputErrors, err := a.CommandRunner.RunCommandAsync(command)
+	output, outputErrors, err := a.CommandRunner.RunCommandAsync(commandrunner.ExecCommand{Command: command})
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute command: %s, err: %w", command, err)
 	}
@@ -28,7 +29,6 @@ func (a *Apt) UpdatePackageSimulation(pkg *models.Package) (<-chan string, error
 // on stderr and in case of error it will terminate the process and return the error
 func (a *Apt) UpdatePackage(pkg *models.Package, output chan<- string) error {
 	command := fmt.Sprintf("%s install --only-upgrade --simulate %s", a.CLI, pkg.Name)
-	applyCommandRootElevation(&command)
 
 	return a.exec(command, output)
 }
@@ -37,26 +37,19 @@ func (a *Apt) UpdatePackage(pkg *models.Package, output chan<- string) error {
 // on stderr and in case of error it will terminate the process and return the error
 func (a *Apt) UpdateAllPackages(output chan<- string) error {
 	command := fmt.Sprintf("%s upgrade -y", a.CLI)
-	applyCommandRootElevation(&command)
 
 	return a.exec(command, output)
 }
 
 func (a *Apt) Refresh(output chan<- string) error {
 	command := fmt.Sprintf("%s update", a.CLI)
-	applyCommandRootElevation(&command)
 
 	return a.exec(command, output)
 }
 
-// applyCommandRootElevation applies the root elevation to the command by adding sudo
-func applyCommandRootElevation(command *string) {
-	*command = fmt.Sprintf("sudo -S %s", *command)
-}
-
 // exec runs the specified command and manages stdout and stderr
 func (a *Apt) exec(command string, output chan<- string) error {
-	stdOutput, outputErrors, err := a.CommandRunner.RunCommandAsync(command)
+	stdOutput, outputErrors, err := a.CommandRunner.RunCommandAsync(commandrunner.ExecCommand{Command: command})
 	if err != nil {
 		return fmt.Errorf("failed to execute command: %s, err: %w", command, err)
 	}

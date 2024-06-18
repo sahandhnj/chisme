@@ -86,6 +86,11 @@ func initCommandRunner(host string) commandrunner.CommandRunner {
 		if err != nil {
 			log.Fatalf("Error creating SSH command runner: %s", err)
 		}
+
+		if getEnv("SSH_ASKPASS_PATH", "") != "" {
+			commandRunner.AskPassPath = getEnv("SSH_ASKPASS_PATH", "")
+		}
+
 		return commandRunner
 	default:
 		log.Fatalf("Unsupported host: %s", host)
@@ -181,10 +186,8 @@ func updateAllPackages(pkgManager packagemanager.PackageManger, packageStore per
 	if err := executeFunctionWithStreamOutput(pkgManager.Refresh); err != nil {
 		log.Fatalf("Error updating package: %s", err)
 	}
-	//if err := executeFunctionWithStreamOutput(pkgManager.UpdateAllPackages); err != nil {
-	//	log.Fatalf("Error updating package: %s", err)
-	//}
 
+	//TODO: Here we are assuming that the upgrade task is gonna work, but we should check the output of the command
 	packages, err := pkgManager.GetUpgradablePackages()
 	if err != nil {
 		log.Fatalf("Error listing upgradable packages: %s", err)
@@ -192,8 +195,8 @@ func updateAllPackages(pkgManager packagemanager.PackageManger, packageStore per
 	for _, aptPackage := range packages {
 		pkg, _ := packageStore.GetByName(aptPackage.Name)
 		if pkg == nil {
-			pkg.LastUpdated = time.Now()
-			if err := packageStore.SaveOrUpdatePackage(pkg); err != nil {
+			aptPackage.LastUpdated = time.Now()
+			if err := packageStore.SaveOrUpdatePackage(aptPackage); err != nil {
 				log.Printf("Error saving package: %s", err)
 			}
 		} else if pkg.InstalledVersion != aptPackage.InstalledVersion {
@@ -205,7 +208,11 @@ func updateAllPackages(pkgManager packagemanager.PackageManger, packageStore per
 				log.Printf("Error updating package: %s", err)
 			}
 		}
-		fmt.Printf("Package: %s, Installed Version: %s, New Version: %s\n", pkg.Name, pkg.InstalledVersion, pkg.Version)
+		fmt.Printf("Package: %s, Installed Version: %s, New Version: %s\n", aptPackage.Name, aptPackage.InstalledVersion, aptPackage.Version)
+	}
+
+	if err := executeFunctionWithStreamOutput(pkgManager.UpdateAllPackages); err != nil {
+		log.Fatalf("Error updating package: %s", err)
 	}
 }
 

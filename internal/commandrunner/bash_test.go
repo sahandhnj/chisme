@@ -8,7 +8,7 @@ import (
 func TestBashCommandRunner_RunCommand_Cat(t *testing.T) {
 	cmdRunner := BashCommandRunner{}
 
-	scanner, err := cmdRunner.RunCommand("echo 'Hello, World!'")
+	scanner, err := cmdRunner.RunCommand(ExecCommand{Command: "echo 'Hello, World!'"})
 	if err != nil {
 		t.Fatalf("RunCommand() failed, error = %v", err)
 	}
@@ -23,13 +23,13 @@ func TestBashCommandRunner_RunCommand_Cat(t *testing.T) {
 func TestBashCommandRunner_RunCommand_NoExistingCommand(t *testing.T) {
 	cmdRunner := BashCommandRunner{}
 
-	_, err := cmdRunner.RunCommand("non-existing-command")
+	_, err := cmdRunner.RunCommand(ExecCommand{Command: "non-existing-command"})
 	if err == nil {
 		t.Fatalf("RunCommand() expected an error but got nil")
 	}
 
-	if !strings.Contains(err.Error(), "command execution failed") {
-		t.Fatalf("RunCommand() error = %v, expected to contain %v", err, "command execution failed")
+	if !strings.Contains(err.Error(), "execution failed") {
+		t.Fatalf("RunCommand() error = %v, expected to contain %v", err, "execution failed")
 	}
 }
 
@@ -37,7 +37,7 @@ func TestBashCommandRunner_RunCommandAsync(t *testing.T) {
 	cmdRunner := BashCommandRunner{}
 
 	t.Run("EchoCommand", func(t *testing.T) {
-		output, outputError, err := cmdRunner.RunCommandAsync("echo 'Hello, World!'")
+		output, outputError, err := cmdRunner.RunCommandAsync(ExecCommand{Command: "echo 'Hello, World!'"})
 		if err != nil {
 			t.Fatalf("RunCommandAsync() failed, error = %v", err)
 		}
@@ -54,7 +54,7 @@ func TestBashCommandRunner_RunCommandAsync(t *testing.T) {
 	})
 
 	t.Run("CatCommand", func(t *testing.T) {
-		output, outputError, err := cmdRunner.RunCommandAsync("echo 'Hello, World!' | cat")
+		output, outputError, err := cmdRunner.RunCommandAsync(ExecCommand{Command: "echo 'Hello, World!' | cat"})
 		if err != nil {
 			t.Fatalf("RunCommandAsync() failed, error = %v", err)
 		}
@@ -71,7 +71,7 @@ func TestBashCommandRunner_RunCommandAsync(t *testing.T) {
 	})
 
 	t.Run("CommandWithError", func(t *testing.T) {
-		output, outputError, err := cmdRunner.RunCommandAsync("invalid_command")
+		output, outputError, err := cmdRunner.RunCommandAsync(ExecCommand{Command: "invalid_command"})
 		if err != nil {
 			t.Fatalf("RunCommandAsync() failed, error = %v", err)
 		}

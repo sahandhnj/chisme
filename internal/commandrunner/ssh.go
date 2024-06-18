@@ -12,7 +12,8 @@ import (
 
 // SSHCommandRunner implements CommandRunner for running bash commands over an SSH connection
 type SSHCommandRunner struct {
-	config SSHConfig
+	config      SSHConfig
+	AskPassPath string
 }
 
 // SSHConfig holds the configuration for the sshrunner connection
@@ -52,7 +53,7 @@ func validateConfig(config SSHConfig) error {
 }
 
 // RunCommand runs a command over a sshrunner connection and returns the output as a scanner
-func (s *SSHCommandRunner) RunCommand(command string) (*bufio.Scanner, error) {
+func (s *SSHCommandRunner) RunCommand(ec ExecCommand) (*bufio.Scanner, error) {
 	client, err := connectToSSH(&s.config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to sshrunner: %w", err)
@@ -65,7 +66,9 @@ func (s *SSHCommandRunner) RunCommand(command string) (*bufio.Scanner, error) {
 	}
 	defer session.Close()
 
-	output, err := session.CombinedOutput(command)
+	applyCommandRootElevation(&ec.Command, s.AskPassPath)
+
+	output, err := session.CombinedOutput(ec.Command)
 	if err != nil {
 		return nil, err
 	}
@@ -73,8 +76,8 @@ func (s *SSHCommandRunner) RunCommand(command string) (*bufio.Scanner, error) {
 	return bufio.NewScanner(bytes.NewReader(output)), nil
 }
 
-// RunCommandAsync runs a command over an sshrunner connection asynchronously and returns a channel with the output lines
-func (s *SSHCommandRunner) RunCommandAsync(command string) (<-chan string, <-chan error, error) {
+// RunCommandAsync runs a command over a sshrunner connection asynchronously and returns a channel with the output lines
+func (s *SSHCommandRunner) RunCommandAsync(ec ExecCommand) (<-chan string, <-chan error, error) {
 	output := make(chan string, 10)
 	errorsChan := make(chan error)
 
@@ -95,11 +98,13 @@ func (s *SSHCommandRunner) RunCommandAsync(command string) (<-chan string, <-cha
 		return nil, nil, err
 	}
 
+	applyCommandRootElevation(&ec.Command, s.AskPassPath)
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 
 	go handleSshOutput(stdOut, stdErr, output, errorsChan, &wg)
-	go runSshCommand(session, command, output, errorsChan, client, &wg)
+	go runSshCommand(session, ec.Command, output, errorsChan, client, &wg)
 
 	return output, errorsChan, nil
 }
