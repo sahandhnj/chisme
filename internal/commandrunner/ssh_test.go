@@ -2,6 +2,7 @@ package commandrunner
 
 import (
 	"fmt"
+	"golang.org/x/crypto/ssh"
 	"strings"
 	"testing"
 )
@@ -140,6 +141,58 @@ func TestSSHCommandRunner_RunCommand_Concurrent(t *testing.T) {
 				t.Errorf("unexpected output: %q", result)
 			}
 		}
+	}
+}
+
+func TestApplyCommandSettings(t *testing.T) {
+	tests := []struct {
+		name        string
+		ec          ExecCommand
+		askPassPath string
+		expectedCmd string
+		expectStdin bool
+	}{
+		{
+			name:        "Elevated command with askpass",
+			ec:          ExecCommand{Command: "ls", Elevated: true},
+			askPassPath: "/path/to/askpass",
+			expectedCmd: "SUDO_ASKPASS=/path/to/askpass sudo -A ls",
+			expectStdin: false,
+		},
+		{
+			name:        "Elevated command with standard Input",
+			ec:          ExecCommand{Command: "ls", Elevated: true},
+			askPassPath: "",
+			expectedCmd: "sudo -S ls",
+			expectStdin: false,
+		},
+		{
+			name:        "Non-elevated command",
+			ec:          ExecCommand{Command: "ls", Elevated: false},
+			askPassPath: "/path/to/askpass",
+			expectedCmd: "ls",
+			expectStdin: false,
+		},
+		{
+			name:        "Command with Input",
+			ec:          ExecCommand{Command: "ls", Elevated: false, Input: strings.NewReader("Input")},
+			askPassPath: "/path/to/askpass",
+			expectedCmd: "ls",
+			expectStdin: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			session := &ssh.Session{}
+			applyCommandSettings(&tt.ec, tt.askPassPath, session)
+			if tt.ec.Command != tt.expectedCmd {
+				t.Errorf("expected command %s, got %s", tt.expectedCmd, tt.ec.Command)
+			}
+			if (session.Stdin != nil) != tt.expectStdin {
+				t.Errorf("expected stdin to be set: %v, but it was not", tt.expectStdin)
+			}
+		})
 	}
 }
 

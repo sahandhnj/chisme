@@ -1,12 +1,16 @@
 package commandrunner
 
-import "bufio"
+import (
+	"bufio"
+	"io"
+)
 
 // ExecCommand is a struct that holds the command to be executed and
 // a flag to indicate if the command should be run with elevated privileges
 type ExecCommand struct {
 	Command  string
 	Elevated bool
+	Input    io.Reader
 }
 
 // CommandRunner is an interface for running system commands

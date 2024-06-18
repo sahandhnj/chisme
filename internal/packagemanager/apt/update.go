@@ -11,7 +11,7 @@ import (
 func (a *Apt) UpdatePackageSimulation(pkg *models.Package) (<-chan string, error) {
 	command := fmt.Sprintf("%s install --only-upgrade --simulate %s", a.CLI, pkg.Name)
 
-	output, outputErrors, err := a.CommandRunner.RunCommandAsync(commandrunner.ExecCommand{Command: command})
+	output, outputErrors, err := a.CommandRunner.RunCommandAsync(commandrunner.ExecCommand{Command: command, Elevated: true})
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute command: %s, err: %w", command, err)
 	}
@@ -49,7 +49,7 @@ func (a *Apt) Refresh(output chan<- string) error {
 
 // exec runs the specified command and manages stdout and stderr
 func (a *Apt) exec(command string, output chan<- string) error {
-	stdOutput, outputErrors, err := a.CommandRunner.RunCommandAsync(commandrunner.ExecCommand{Command: command})
+	stdOutput, outputErrors, err := a.CommandRunner.RunCommandAsync(commandrunner.ExecCommand{Command: command, Elevated: true})
 	if err != nil {
 		return fmt.Errorf("failed to execute command: %s, err: %w", command, err)
 	}

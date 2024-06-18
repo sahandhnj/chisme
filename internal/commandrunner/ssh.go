@@ -66,7 +66,7 @@ func (s *SSHCommandRunner) RunCommand(ec ExecCommand) (*bufio.Scanner, error) {
 	}
 	defer session.Close()
 
-	applyCommandRootElevation(&ec.Command, s.AskPassPath)
+	applyCommandSettings(&ec, s.AskPassPath, session)
 
 	output, err := session.CombinedOutput(ec.Command)
 	if err != nil {
@@ -98,7 +98,7 @@ func (s *SSHCommandRunner) RunCommandAsync(ec ExecCommand) (<-chan string, <-cha
 		return nil, nil, err
 	}
 
-	applyCommandRootElevation(&ec.Command, s.AskPassPath)
+	applyCommandSettings(&ec, s.AskPassPath, session)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -139,6 +139,17 @@ func setupSSHConfig(config *SSHConfig) (*ssh.ClientConfig, error) {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         10 * time.Second,
 	}, nil
+}
+
+// applyCommandSettings applies the root elevation and Input settings to the command
+func applyCommandSettings(ec *ExecCommand, askPassPath string, session *ssh.Session) {
+	if ec.Elevated {
+		applyCommandRootElevation(&ec.Command, askPassPath)
+	}
+
+	if ec.Input != nil {
+		session.Stdin = ec.Input
+	}
 }
 
 // getPublicKeySignerFromPrivateKey returns a signer from the provided private key
@@ -188,7 +199,7 @@ func runSshCommand(session *ssh.Session, command string, output chan<- string, e
 // handleSshOutput reads from the stdout and stderr pipes and sends the output to the output channel
 func handleSshOutput(stdOut, stdErr io.Reader, output chan<- string, errorsChan chan<- error, wg *sync.WaitGroup) {
 	defer wg.Done()
-	scanner := bufio.NewScanner(io.MultiReader(stdOut, stdErr))
+	scanner := bufio.NewScanner(io.MultiReader(stdErr, stdOut))
 	for scanner.Scan() {
 		output <- scanner.Text()
 	}
