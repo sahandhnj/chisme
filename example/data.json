@@ -1,0 +1,362 @@
+{
+  "servers": [
+    {
+      "id": 1,
+      "shortname": "srv-web-1",
+      "name": "Web Server 1",
+      "status": "up",
+      "ip": "192.168.1.1",
+      "description": "Main server hosting web applications for frontend",
+      "log_stream": "/var/log/server1.log"
+    },
+    {
+      "id": 2,
+      "shortname": "srv-backend-1",
+      "name": "Backend Server 1",
+      "status": "up",
+      "ip": "192.168.2.1",
+      "description": "Backend server for API processing and internal services",
+      "log_stream": "/var/log/server2.log"
+    }
+  ],
+  "applications": [
+    {
+      "id": 1,
+      "shortname": "main-site",
+      "name": "Main Website",
+      "server_id": 1,
+      "status": "up",
+      "ip": "192.168.1.10",
+      "log_stream": "/var/log/main-site/app.log",
+      "description": "Main website serving external users and handling frontend traffic",
+      "metrics": {
+        "cpu_usage": "65%",
+        "memory_usage": "70%",
+        "response_time_ms": 150
+      },
+      "checkpoints": [
+        {
+          "id": 1,
+          "type": "container",
+          "name": "nginx",
+          "status": "up",
+          "check_status": "healthy",
+          "log_stream": "/var/log/main-site/nginx-container.log"
+        },
+        {
+          "id": 2,
+          "type": "container",
+          "name": "redis",
+          "status": "up",
+          "check_status": "healthy",
+          "log_stream": "/var/log/main-site/redis-container.log"
+        },
+        {
+          "id": 3,
+          "type": "api-check",
+          "name": "Frontend API Health Check",
+          "status": "up",
+          "check_status": "healthy",
+          "log_stream": "/var/log/main-site/api-check.log",
+          "metrics": {
+            "uptime": "99.98%",
+            "response_time_ms": 180,
+            "error_rate": "0.05%"
+          }
+        }
+      ],
+      "resources": [2, 3]
+    },
+    {
+      "id": 2,
+      "shortname": "blog-site",
+      "name": "Blog Website",
+      "server_id": 1,
+      "status": "up",
+      "ip": "192.168.1.11",
+      "log_stream": "/var/log/blog-site/app.log",
+      "description": "Blog for publishing news and articles",
+      "metrics": {
+        "cpu_usage": "50%",
+        "memory_usage": "60%",
+        "response_time_ms": 120
+      },
+      "checkpoints": [
+        {
+          "id": 4,
+          "type": "container",
+          "name": "nginx",
+          "status": "up",
+          "check_status": "healthy",
+          "log_stream": "/var/log/blog-site/nginx-container.log"
+        },
+        {
+          "id": 5,
+          "type": "backup",
+          "name": "Daily Backup",
+          "status": "up",
+          "check_status": "completed",
+          "log_stream": "/var/log/blog-site/backup.log"
+        }
+      ],
+      "resources": [4, 3]
+    },
+    {
+      "id": 3,
+      "shortname": "media-service",
+      "name": "Media Streaming Service",
+      "server_id": 1,
+      "status": "up",
+      "ip": "192.168.1.12",
+      "log_stream": "/var/log/media-service/app.log",
+      "description": "Handles video and audio streaming for the platform",
+      "metrics": {
+        "cpu_usage": "80%",
+        "memory_usage": "85%",
+        "response_time_ms": 200
+      },
+      "checkpoints": [
+        {
+          "id": 6,
+          "type": "container",
+          "name": "ffmpeg",
+          "status": "up",
+          "check_status": "healthy",
+          "log_stream": "/var/log/media-service/ffmpeg-container.log"
+        },
+        {
+          "id": 7,
+          "type": "container",
+          "name": "redis",
+          "status": "up",
+          "check_status": "healthy",
+          "log_stream": "/var/log/media-service/redis-container.log"
+        },
+        {
+          "id": 8,
+          "type": "api-check",
+          "name": "Media API Health Check",
+          "status": "up",
+          "check_status": "healthy",
+          "log_stream": "/var/log/media-service/api-check.log",
+          "metrics": {
+            "uptime": "99.95%",
+            "response_time_ms": 250,
+            "error_rate": "0.1%"
+          }
+        }
+      ],
+      "resources": [5, 6]
+    },
+    {
+      "id": 4,
+      "shortname": "backend-api",
+      "name": "Backend API",
+      "server_id": 2,
+      "status": "up",
+      "ip": "192.168.2.10",
+      "log_stream": "/var/log/backend-api/app.log",
+      "description": "Handles backend operations and APIs for all services",
+      "metrics": {
+        "cpu_usage": "55%",
+        "memory_usage": "50%",
+        "response_time_ms": 120
+      },
+      "checkpoints": [
+        {
+          "id": 9,
+          "type": "microservice",
+          "name": "Payment Service",
+          "status": "up",
+          "check_status": "healthy",
+          "log_stream": "/var/log/backend-api/payment-service.log"
+        },
+        {
+          "id": 10,
+          "type": "microservice",
+          "name": "Order Service",
+          "status": "up",
+          "check_status": "healthy",
+          "log_stream": "/var/log/backend-api/order-service.log"
+        },
+        {
+          "id": 11,
+          "type": "api-check",
+          "name": "API Health Check",
+          "status": "up",
+          "check_status": "healthy",
+          "log_stream": "/var/log/backend-api/api-check.log",
+          "metrics": {
+            "uptime": "99.99%",
+            "response_time_ms": 110,
+            "error_rate": "0.03%"
+          }
+        }
+      ],
+      "resources": [2, 8]
+    },
+    {
+      "id": 5,
+      "shortname": "admin-service",
+      "name": "Admin Panel",
+      "server_id": 2,
+      "status": "up",
+      "ip": "192.168.2.11",
+      "log_stream": "/var/log/admin-service/app.log",
+      "description": "Admin panel for internal management",
+      "metrics": {
+        "cpu_usage": "30%",
+        "memory_usage": "40%",
+        "response_time_ms": 90
+      },
+      "checkpoints": [
+        {
+          "id": 12,
+          "type": "api-check",
+          "name": "Admin API Health Check",
+          "status": "up",
+          "check_status": "healthy",
+          "log_stream": "/var/log/admin-service/api-check.log",
+          "metrics": {
+            "uptime": "99.9%",
+            "response_time_ms": 95,
+            "error_rate": "0.02%"
+          }
+        }
+      ],
+      "resources": [5, 9]
+    }
+  ],
+  "resources": [
+    {
+      "id": 2,
+      "shortname": "db-mysql",
+      "name": "MySQL Database",
+      "type": "database",
+      "server_id": 2,
+      "ip": "192.168.2.100",
+      "status": "up",
+      "log_stream": "/var/log/mysql/mysql.log",
+      "description": "MySQL database shared across various applications",
+      "metrics": {
+        "queries_per_second": 350,
+        "disk_usage": "60GB",
+        "cpu_usage": "50%",
+        "memory_usage": "40%"
+      }
+    },
+    {
+      "id": 4,
+      "shortname": "db-postgres",
+      "name": "PostgreSQL Database",
+      "type": "database",
+      "server_id": 2,
+      "ip": "192.168.2.101",
+      "status": "up",
+      "log_stream": "/var/log/postgres/postgres.log",
+      "description": "PostgreSQL database for blog and internal services",
+      "metrics": {
+        "queries_per_second": 250,
+        "disk_usage": "30GB",
+        "cpu_usage": "45%",
+        "memory_usage": "35%"
+      }
+    },
+    {
+      "id": 5,
+      "shortname": "db-mongodb",
+      "name": "MongoDB",
+      "type": "database",
+      "server_id": 1,
+      "ip": "192.168.1.100",
+      "status": "up",
+      "log_stream": "/var/log/mongodb/mongodb.log",
+      "description": "MongoDB database for media services and admin panel",
+      "metrics": {
+        "queries_per_second": 500,
+        "disk_usage": "80GB",
+        "cpu_usage": "70%",
+        "memory_usage": "65%"
+      }
+    },
+    {
+      "id": 8,
+      "shortname": "redis-cache",
+      "type": "cache",
+      "name": "Redis Cache",
+      "server_id": 2,
+      "ip": "192.168.2.100",
+      "status": "up",
+      "log_stream": "/var/log/redis/redis.log",
+      "description": "Redis cache shared by backend API and media services",
+      "metrics": {
+        "cache_hits_per_second": 1500,
+        "memory_usage": "30%",
+        "uptime": "99.9%"
+      }
+    },
+    {
+      "id": 3,
+      "shortname": "ssl-main-site",
+      "type": "ssl_certificate",
+      "name": "SSL Certificate - main.com",
+      "server_id": 1,
+      "ip": "192.168.1.1",
+      "status": "up",
+      "log_stream": "/var/log/main-site/ssl.log",
+      "info": "SSL certificate for main website and frontend services"
+    },
+    {
+      "id": 6,
+      "shortname": "ssl-media-service",
+      "type": "ssl_certificate",
+      "name": "SSL Certificate - media.com",
+      "server_id": 1,
+      "ip": "192.168.1.12",
+      "status": "up",
+      "log_stream": "/var/log/media-service/ssl.log",
+      "info": "SSL certificate for media streaming services"
+    },
+    {
+      "id": 9,
+      "shortname": "ssl-admin-panel",
+      "type": "ssl_certificate",
+      "name": "SSL Certificate - admin.com",
+      "server_id": 2,
+      "ip": "192.168.2.11",
+      "status": "up",
+      "log_stream": "/var/log/admin-service/ssl.log",
+      "info": "SSL certificate for internal admin panel"
+    },
+    {
+      "id": 12,
+      "shortname": "nginx-web-server",
+      "type": "web_server",
+      "name": "Nginx Web Server",
+      "server_id": 1,
+      "status": "up",
+      "log_stream": "/var/log/nginx/nginx.log",
+      "info": "Nginx web server for handling frontend traffic"
+    },
+    {
+      "id": 13,
+      "shortname": "traefik-web-server",
+      "type": "web_server",
+      "name": "Traefik Web Server",
+      "server_id": 2,
+      "status": "up",
+      "log_stream": "/var/log/traefik/traefik.log",
+      "info": "Traefik web server for routing and load balancing"
+    },
+    {
+      "id": 14,
+      "shortname": "ufw",
+      "type": "firewall",
+      "name": "UFW Firewall",
+      "server_id": 2,
+      "status": "down",
+      "log_stream": "/var/log/ufw/ufw.log",
+      "info": "Uncomplicated Firewall for server security"
+    }
+  ]
+}
