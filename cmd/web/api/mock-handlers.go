@@ -131,6 +131,34 @@ func getServers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getApplications(w http.ResponseWriter, r *http.Request) {
+	data, err := loadData()
+	if err != nil {
+		http.Error(w, "Failed to load data", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(data.Applications)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func getResources(w http.ResponseWriter, r *http.Request) {
+	data, err := loadData()
+	if err != nil {
+		http.Error(w, "Failed to load data", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(data.Resources)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func getServerByID(w http.ResponseWriter, r *http.Request) {
 	idStr := pathValue(r, "server")
 	id, err := strconv.Atoi(idStr)
@@ -241,6 +269,50 @@ func getApplicationByID(w http.ResponseWriter, r *http.Request) {
 	}{
 		Application: *appFound,
 		Resources:   appResources,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// Get a specific application on a server
+func getResourceByID(w http.ResponseWriter, r *http.Request) {
+	serverIDStr := pathValue(r, "server")
+	resourceIdStr := pathValue(r, "resource")
+
+	serverID, err := strconv.Atoi(serverIDStr)
+	resourceId, err2 := strconv.Atoi(resourceIdStr)
+	if err != nil || err2 != nil {
+		http.Error(w, "Invalid server or application ID", http.StatusBadRequest)
+		return
+	}
+
+	data, err := loadData()
+	if err != nil {
+		http.Error(w, "Failed to load data", http.StatusInternalServerError)
+		return
+	}
+
+	var resourceFound *Resource
+	for _, resource := range data.Resources {
+		if resource.ID == resourceId && resource.ServerID == serverID {
+			resourceFound = &resource
+			break
+		}
+	}
+
+	if resourceFound == nil {
+		http.Error(w, "Resource not found", http.StatusNotFound)
+		return
+	}
+
+	response := struct {
+		Resource Resource `json:"resource"`
+	}{
+		Resource: *resourceFound,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
